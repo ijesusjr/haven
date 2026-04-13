@@ -42,7 +42,7 @@ GDACS_RSS_URL = "https://www.gdacs.org/xml/rss.xml"
 
 # ReliefWeb API v2 — free, no auth, 1000 calls/day limit
 RELIEFWEB_URL = "https://api.reliefweb.int/v2/reports"
-RELIEFWEB_APP = "prepsense-portfolio"   # required appname parameter
+RELIEFWEB_APP = "ildebrando-prepsense-itdf0"   # required appname parameter
 
 MAX_REGIONAL_SCORE = 30
 
@@ -64,7 +64,6 @@ _CRISIS_THEMES = [
     "Food and Nutrition",
     "Shelter and Non-Food Items",
 ]
-
 
 # ---------------------------------------------------------------------------
 # Data classes
@@ -194,22 +193,27 @@ def compute_disaster_score(events: List[DisasterEvent]) -> int:
 # ReliefWeb fetcher
 # ---------------------------------------------------------------------------
 
+_THEME_SCORES = {
+    "Conflict and Violence":                         8,
+    "Refugees and Internally Displaced Persons":     8,
+    "Disaster Management":                           6,
+    "Food and Nutrition":                            4,
+    "Agriculture":                                   2,
+    "Protection and Human Rights":                   4,
+    "Humanitarian Financing":                        2,
+}
+
+_SKIP_TITLE_KEYWORDS = ["location map", "carte", "bulletin", "country brief"]
+
+
 def fetch_reliefweb_reports(
     region_countries: List[str],
     lookback_days: int = 30,
     limit: int = 10,
     timeout: int = 15,
 ) -> List[CrisisReport]:
-    """
-    Fetch recent crisis/conflict reports from ReliefWeb API.
-    Filters to reports tagged with our region countries.
-
-    Returns:
-        List of CrisisReport objects, sorted by score descending.
-    """
     since = (date.today() - timedelta(days=lookback_days)).isoformat()
 
-    # POST body — filter by country names and date
     payload = {
         "limit": limit,
         "sort": ["date.created:desc"],
@@ -217,7 +221,7 @@ def fetch_reliefweb_reports(
             "operator": "AND",
             "conditions": [
                 {
-                    "field":    "country.name",
+                    "field":    "primary_country",
                     "value":    region_countries,
                     "operator": "OR",
                 },
@@ -228,7 +232,12 @@ def fetch_reliefweb_reports(
             ],
         },
         "fields": {
-            "include": ["title", "country.name", "date.created", "theme.name", "url.canonical"],
+            "include": [
+                "title",
+                "primary_country.name",
+                "date.created",
+                "theme.name",
+            ],
         },
     }
 
@@ -243,30 +252,40 @@ def fetch_reliefweb_reports(
 
     reports = []
     for item in data.get("data", []):
-        f       = item.get("fields", {})
-        title   = f.get("title", "")
-        url     = f.get("url", {}).get("canonical", "") if isinstance(f.get("url"), dict) else ""
-        created = f.get("date", {}).get("created", "")[:10] if isinstance(f.get("date"), dict) else ""
-        themes  = [t.get("name", "") for t in f.get("theme", [])] if f.get("theme") else []
-        country = f.get("country", [{}])[0].get("name", "") if f.get("country") else ""
-
-        # Score based on theme relevance
+        f         = item.get("fields", {})
+        title     = f.get("title", "")
+        created   = f.get("date", {}).get("created", "")[:10] if isinstance(f.get("date"), dict) else ""
+        themes    = [t.get("name", "") for t in f.get("theme", [])] if f.get("theme") else []
         theme_str = themes[0] if themes else ""
-        score = 8 if theme_str in ("Conflict and Violence",
-                                    "Refugees and Internally Displaced Persons") else 4
+        country   = f.get("primary_country", {}).get("name", "") if isinstance(f.get("primary_country"), dict) else ""
 
+        if not theme_str:
+            continue
+        if any(kw in title.lower() for kw in _SKIP_TITLE_KEYWORDS):
+            continue
+
+        score = _THEME_SCORES.get(theme_str, 3)
         reports.append(CrisisReport(
             title=   title,
             country= country,
             date=    created,
             theme=   theme_str,
-            url=     url,
+            url=     "",
             score=   score,
         ))
 
+    # Deduplicate: same country + theme + date = same report in different languages
+    seen = set()
+    deduped = []
+    for r in reports:
+        key = (r.country, r.theme, r.date)
+        if key not in seen:
+            seen.add(key)
+            deduped.append(r)
+    reports = deduped
+
     reports.sort(key=lambda r: -r.score)
     return reports
-
 
 def compute_crisis_score(reports: List[CrisisReport]) -> int:
     """
