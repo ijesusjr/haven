@@ -191,7 +191,7 @@ def get_risk_score(signals) -> RiskSummary:
 
 def _geo_level(score: int) -> str:
     if score >= 22: return "HIGH"
-    if score >= 12: return "ELEVATED"
+    if score >= 12: return "MEDIUM"
     if score >= 4:  return "LOW"
     return "MINIMAL"
 

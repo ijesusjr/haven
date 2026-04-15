@@ -131,7 +131,7 @@ class HealthSnapshot:
     period:           str     # e.g. "28 March – 3 April 2026"
     threats:          List[ThreatSignal]
     health_score:     int     # 0-50
-    level:            str     # ROUTINE / ELEVATED / HIGH / CRITICAL
+    level:            str     # ROUTINE / MEDIUM / HIGH / CRITICAL
     top_threats:      List[str]   # human-readable names of active threats
     cdtr_url:         str         # URL of the CDTR page used
     fetched_at:       str
@@ -147,7 +147,7 @@ def health_score_to_level(score: int) -> str:
 
     Thresholds are calibrated so that:
     - Typical week (ILI + 1-2 monitored threats) → ROUTINE
-    - Active EU outbreak (e.g. measles + mpox)   → ELEVATED
+    - Active EU outbreak (e.g. measles + mpox)   → MEDIUM
     - Novel pathogen or pandemic signal           → HIGH / CRITICAL
     """
     if score >= 40:
@@ -155,7 +155,7 @@ def health_score_to_level(score: int) -> str:
     if score >= 25:
         return "HIGH"
     if score >= 10:
-        return "ELEVATED"
+        return "MEDIUM"
     return "ROUTINE"
 
 
@@ -327,7 +327,7 @@ def simulate_health_snapshot(
     Generate a simulated HealthSnapshot for testing and demos.
 
     Args:
-        scenario: One of 'routine', 'elevated', 'pandemic'
+        scenario: One of 'routine', 'medium', 'pandemic'
 
     Returns:
         HealthSnapshot with realistic simulated data.
@@ -342,7 +342,7 @@ def simulate_health_snapshot(
             "week_label": "Week 15, 2026",
             "period":     "4–10 April 2026",
         },
-        "elevated": {
+        "medium": {
             "threats": [
                 ThreatSignal("Measles", 12, True, "Measles outbreak reported in EU/EEA"),
                 ThreatSignal("Mpox", 20, True, "Mpox cases reported in EU member states"),

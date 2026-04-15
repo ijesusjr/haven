@@ -64,9 +64,9 @@ class TestRegionalScoreToLevel:
         assert regional_score_to_level(4)  == "LOW"
         assert regional_score_to_level(11) == "LOW"
 
-    def test_elevated(self):
-        assert regional_score_to_level(12) == "ELEVATED"
-        assert regional_score_to_level(21) == "ELEVATED"
+    def test_medium(self):
+        assert regional_score_to_level(12) == "MEDIUM"
+        assert regional_score_to_level(21) == "MEDIUM"
 
     def test_high(self):
         assert regional_score_to_level(22) == "HIGH"
@@ -74,7 +74,7 @@ class TestRegionalScoreToLevel:
 
     def test_boundary_values(self):
         assert regional_score_to_level(4)  == "LOW"
-        assert regional_score_to_level(12) == "ELEVATED"
+        assert regional_score_to_level(12) == "MEDIUM"
         assert regional_score_to_level(22) == "HIGH"
 
 
@@ -180,10 +180,10 @@ class TestCombinedScore:
         snap = simulate_regional_snapshot("calm")
         assert snap.regional_score == 0
 
-    def test_crisis_scenario_higher_than_elevated(self):
-        elevated = simulate_regional_snapshot("elevated")
+    def test_crisis_scenario_higher_than_medium(self):
+        medium = simulate_regional_snapshot("medium")
         crisis   = simulate_regional_snapshot("crisis")
-        assert crisis.regional_score > elevated.regional_score
+        assert crisis.regional_score > medium.regional_score
 
 
 # ---------------------------------------------------------------------------
@@ -199,15 +199,15 @@ class TestSimulateRegionalSnapshot:
         assert snap.disaster_events == []
         assert snap.crisis_reports  == []
 
-    def test_elevated_scenario(self):
-        snap = simulate_regional_snapshot("elevated")
+    def test_medium_scenario(self):
+        snap = simulate_regional_snapshot("medium")
         assert snap.regional_score > 0
-        assert snap.level in ("LOW", "ELEVATED", "HIGH")
+        assert snap.level in ("LOW", "MEDIUM", "HIGH")
 
     def test_crisis_scenario(self):
         snap = simulate_regional_snapshot("crisis")
         assert snap.regional_score >= 12
-        assert snap.level in ("ELEVATED", "HIGH")
+        assert snap.level in ("MEDIUM", "HIGH")
 
     def test_unknown_scenario_defaults_to_calm(self):
         snap = simulate_regional_snapshot("nonexistent")
@@ -215,31 +215,31 @@ class TestSimulateRegionalSnapshot:
         assert snap.regional_score == 0
 
     def test_snapshot_fields_populated(self):
-        snap = simulate_regional_snapshot("elevated")
+        snap = simulate_regional_snapshot("medium")
         assert snap.country      != ""
         assert snap.fetched_at   != ""
-        assert snap.level        in ("MINIMAL", "LOW", "ELEVATED", "HIGH")
+        assert snap.level        in ("MINIMAL", "LOW", "MEDIUM", "HIGH")
         assert isinstance(snap.disaster_score, int)
         assert isinstance(snap.crisis_score,   int)
         assert isinstance(snap.regional_score, int)
 
     def test_score_within_bounds(self):
-        for scenario in ("calm", "elevated", "crisis"):
+        for scenario in ("calm", "medium", "crisis"):
             snap = simulate_regional_snapshot(scenario)
             assert 0 <= snap.regional_score <= MAX_REGIONAL_SCORE
 
     def test_level_consistent_with_score(self):
-        for scenario in ("calm", "elevated", "crisis"):
+        for scenario in ("calm", "medium", "crisis"):
             snap = simulate_regional_snapshot(scenario)
             assert snap.level == regional_score_to_level(snap.regional_score)
 
     def test_disaster_score_within_bounds(self):
-        for scenario in ("calm", "elevated", "crisis"):
+        for scenario in ("calm", "medium", "crisis"):
             snap = simulate_regional_snapshot(scenario)
             assert 0 <= snap.disaster_score <= 15
 
     def test_crisis_score_within_bounds(self):
-        for scenario in ("calm", "elevated", "crisis"):
+        for scenario in ("calm", "medium", "crisis"):
             snap = simulate_regional_snapshot(scenario)
             assert 0 <= snap.crisis_score <= 15
 

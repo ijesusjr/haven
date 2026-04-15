@@ -156,9 +156,9 @@ class TestScoreToLevel:
         assert score_to_level(0)  == "LOW"
         assert score_to_level(19) == "LOW"
 
-    def test_elevated(self):
-        assert score_to_level(20) == "ELEVATED"
-        assert score_to_level(44) == "ELEVATED"
+    def test_medium(self):
+        assert score_to_level(20) == "MEDIUM"
+        assert score_to_level(44) == "MEDIUM"
 
     def test_high(self):
         assert score_to_level(45) == "HIGH"
@@ -387,7 +387,7 @@ class TestPrioritize:
         result = prioritize(risk, report)
         assert any(a.category == "KIT_GAP" for a in result)
 
-    def test_combined_alert_when_risk_elevated_and_gap_exists(self):
+    def test_combined_alert_when_risk_medium_and_gap_exists(self):
         risk   = make_risk(score=50, level="HIGH")
         report = self._water_gap_report()
         result = prioritize(risk, report)
@@ -475,12 +475,12 @@ class TestPrioritize:
 
     # --- Health alerts ---
 
-    def test_health_alert_generated_when_elevated(self):
+    def test_health_alert_generated_when_medium(self):
         risk   = make_risk(score=0, level="LOW")
         report = self._full_kit_report()
         result = prioritize(
             risk, report,
-            health_score=20, health_level="ELEVATED",
+            health_score=20, health_level="MEDIUM",
             top_health_threats=["Influenza"]
         )
         assert any(a.category == "HEALTH" for a in result)

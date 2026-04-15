@@ -72,7 +72,7 @@ _HEALTH_RELEVANT_CATEGORIES = {"meds", "hygiene"}
 # ---------------------------------------------------------------------------
 
 def _weather_alerts(risk: RiskResult) -> List[PrioritizedAlert]:
-    """Alert when weather risk is ELEVATED or above."""
+    """Alert when weather risk is MEDIUM or above."""
     if risk.risk_level == "LOW" or risk.risk_score == 0:
         return []
     return [PrioritizedAlert(
@@ -103,7 +103,7 @@ def _combined_alerts(
     if risk.risk_level == "LOW":
         return []
 
-    amplifier = {"ELEVATED": 1.2, "HIGH": 1.5, "CRITICAL": 1.8}.get(risk.risk_level, 1.0)
+    amplifier = {"MEDIUM": 1.2, "HIGH": 1.5, "CRITICAL": 1.8}.get(risk.risk_level, 1.0)
     high_gaps  = [g for g in report.gaps if g.priority == "HIGH"]
 
     alerts = []
@@ -221,7 +221,7 @@ def _health_alerts(
     top_threats: List[str],
 ) -> List[PrioritizedAlert]:
     """
-    Alert when a health threat is ELEVATED or above.
+    Alert when a health threat is MEDIUM or above.
     Normalises 0-50 → 0-100 for consistent urgency mapping.
     """
     if health_level == "ROUTINE":
@@ -251,12 +251,12 @@ def _health_kit_alerts(
 ) -> List[PrioritizedAlert]:
     """
     Health threat amplifies gaps in health-relevant kit categories (meds, hygiene).
-    Only fires at ELEVATED or above and when score >= 10.
+    Only fires at MEDIUM or above and when score >= 10.
     """
     if health_level == "ROUTINE" or health_score < 10:
         return []
 
-    amplifier  = {"ELEVATED": 1.1, "HIGH": 1.3, "CRITICAL": 1.6}.get(health_level, 1.0)
+    amplifier  = {"MEDIUM": 1.1, "HIGH": 1.3, "CRITICAL": 1.6}.get(health_level, 1.0)
     threat_str = ", ".join(top_threats[:2]) if top_threats else "active health threat"
     health_gaps = [g for g in report.gaps if g.category in _HEALTH_RELEVANT_CATEGORIES]
 
@@ -307,7 +307,7 @@ def prioritize(
         geo_trend:          STABLE / INCREASING / DECREASING.
         geo_country:        Country name for message context.
         health_score:       0-50 from HealthSnapshot.health_score.
-        health_level:       ROUTINE / ELEVATED / HIGH / CRITICAL.
+        health_level:       ROUTINE / MEDIUM / HIGH / CRITICAL.
         top_health_threats: Active threat names from HealthSnapshot.top_threats.
 
     Returns:

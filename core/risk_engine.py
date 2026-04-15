@@ -12,7 +12,7 @@ Score composition:
 
 Risk levels:
     LOW       0-19
-    ELEVATED  20-44
+    MEDIUM  20-44
     HIGH      45-69
     CRITICAL  70-100
 """
@@ -163,14 +163,14 @@ def score_to_level(score: int) -> str:
         score: Integer between 0 and 100.
 
     Returns:
-        One of: LOW / ELEVATED / HIGH / CRITICAL
+        One of: LOW / MEDIUM / HIGH / CRITICAL
     """
     if score >= 70:
         return "CRITICAL"
     if score >= 45:
         return "HIGH"
     if score >= 20:
-        return "ELEVATED"
+        return "MEDIUM"
     return "LOW"
 
 
@@ -211,33 +211,30 @@ def compute_risk_score(weather: WeatherSnapshot, alerts: List[Alert]) -> RiskRes
 # Option C — Three independent signals (never summed)
 # ---------------------------------------------------------------------------
 
-# ---------------------------------------------------------------------------
-# Option C — Three independent signals (never summed)
-# ---------------------------------------------------------------------------
-
-from typing import Optional
-
 @dataclass
 class PrepSenseSignals:
     """
     Container for the three independent risk signals in PrepSense.
 
     Option C design: signals are kept separate, displayed as three
-    independent gauges in the UI. Never add these scores together.
+    independent gauges in the UI. The alert prioritizer reads all three
+    and surfaces actionable items from each dimension independently.
 
+    Never add these scores together. Each has its own scale:
         weather_result.risk_score  → 0-100
         geo_score                  → 0-30
         health_score               → 0-50
     """
-    weather:             RiskResult
-    geo_score:           int
-    geo_trend:           str
-    geo_country:         str
-    health_score:        int
-    health_level:        str
-    top_health_threats:  List[str]
+    weather:      RiskResult
+    geo_score:    int           # 0-30  from GeopoliticalSnapshot.geo_score
+    geo_trend:    str           # STABLE / INCREASING / DECREASING
+    geo_country:  str
+    health_score: int           # 0-50  from HealthSnapshot.health_score
+    health_level: str           # ROUTINE / MEDIUM / HIGH / CRITICAL
+    top_health_threats: List[str]
 
     def summary(self) -> dict:
+        """Human-readable summary for the Streamlit dashboard."""
         return {
             "weather": {
                 "score": self.weather.risk_score,
@@ -260,7 +257,11 @@ class PrepSenseSignals:
 
 
 def _geo_level(geo_score: int) -> str:
-    if geo_score >= 22: return "HIGH"
-    if geo_score >= 12: return "ELEVATED"
-    if geo_score >= 4:  return "LOW"
+    """Convert geo_score (0-30) to a level label."""
+    if geo_score >= 22:
+        return "HIGH"
+    if geo_score >= 12:
+        return "MEDIUM"
+    if geo_score >= 4:
+        return "LOW"
     return "MINIMAL"

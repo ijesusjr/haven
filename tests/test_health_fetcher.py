@@ -51,9 +51,9 @@ class TestHealthScoreToLevel:
         assert health_score_to_level(0)  == "ROUTINE"
         assert health_score_to_level(9)  == "ROUTINE"
 
-    def test_elevated(self):
-        assert health_score_to_level(10) == "ELEVATED"
-        assert health_score_to_level(24) == "ELEVATED"
+    def test_medium(self):
+        assert health_score_to_level(10) == "MEDIUM"
+        assert health_score_to_level(24) == "MEDIUM"
 
     def test_high(self):
         assert health_score_to_level(25) == "HIGH"
@@ -64,7 +64,7 @@ class TestHealthScoreToLevel:
         assert health_score_to_level(50) == "CRITICAL"
 
     def test_boundary_values(self):
-        assert health_score_to_level(10) == "ELEVATED"
+        assert health_score_to_level(10) == "MEDIUM"
         assert health_score_to_level(25) == "HIGH"
         assert health_score_to_level(40) == "CRITICAL"
 
@@ -191,12 +191,12 @@ class TestSimulateHealthSnapshot:
     def test_routine_scenario(self):
         snap = simulate_health_snapshot("routine")
         assert snap.health_score <= 20
-        assert snap.level in ("ROUTINE", "ELEVATED")
+        assert snap.level in ("ROUTINE", "MEDIUM")
 
-    def test_elevated_scenario(self):
-        snap = simulate_health_snapshot("elevated")
+    def test_medium_scenario(self):
+        snap = simulate_health_snapshot("medium")
         assert snap.health_score > 5
-        assert snap.level in ("ELEVATED", "HIGH", "CRITICAL")
+        assert snap.level in ("MEDIUM", "HIGH", "CRITICAL")
 
     def test_pandemic_scenario(self):
         snap = simulate_health_snapshot("pandemic")
@@ -206,7 +206,7 @@ class TestSimulateHealthSnapshot:
     def test_unknown_scenario_defaults_to_routine(self):
         snap = simulate_health_snapshot("nonexistent_scenario")
         assert snap is not None
-        assert snap.level in ("ROUTINE", "ELEVATED", "HIGH", "CRITICAL")
+        assert snap.level in ("ROUTINE", "MEDIUM", "HIGH", "CRITICAL")
 
     def test_snapshot_fields_populated(self):
         snap = simulate_health_snapshot("routine")
@@ -217,7 +217,7 @@ class TestSimulateHealthSnapshot:
         assert len(snap.top_threats) > 0
 
     def test_score_within_bounds(self):
-        for scenario in ("routine", "elevated", "pandemic"):
+        for scenario in ("routine", "medium", "pandemic"):
             snap = simulate_health_snapshot(scenario)
             assert 0 <= snap.health_score <= MAX_HEALTH_SCORE
 
@@ -252,14 +252,14 @@ class TestOptionCIndependence:
     def test_three_scenarios_produce_different_scores(self):
         """Each scenario produces a meaningfully different score."""
         routine  = simulate_health_snapshot("routine").health_score
-        elevated = simulate_health_snapshot("elevated").health_score
+        medium = simulate_health_snapshot("medium").health_score
         pandemic = simulate_health_snapshot("pandemic").health_score
-        assert routine < elevated < pandemic
+        assert routine < medium < pandemic
 
     def test_level_labels_distinct_from_weather_labels(self):
         """
-        Health uses ROUTINE/ELEVATED/HIGH/CRITICAL.
-        Weather uses LOW/ELEVATED/HIGH/CRITICAL.
+        Health uses ROUTINE/MEDIUM/HIGH/CRITICAL.
+        Weather uses LOW/MEDIUM/HIGH/CRITICAL.
         ROUTINE vs LOW distinction signals they are different dimensions.
         """
         routine_label = health_score_to_level(0)

@@ -98,7 +98,7 @@ class RegionalSnapshot:
     disaster_score:   int   # 0-15 from GDACS
     crisis_score:     int   # 0-15 from ReliefWeb
     regional_score:   int   # 0-30 combined, capped
-    level:            str   # MINIMAL / LOW / ELEVATED / HIGH
+    level:            str   # MINIMAL / LOW / MEDIUM / HIGH
     fetched_at:       str
 
 
@@ -108,7 +108,7 @@ class RegionalSnapshot:
 
 def regional_score_to_level(score: int) -> str:
     if score >= 22: return "HIGH"
-    if score >= 12: return "ELEVATED"
+    if score >= 12: return "MEDIUM"
     if score >= 4:  return "LOW"
     return "MINIMAL"
 
@@ -372,14 +372,14 @@ def simulate_regional_snapshot(scenario: str = "calm") -> RegionalSnapshot:
     Generate a simulated RegionalSnapshot for testing and demos.
 
     Args:
-        scenario: 'calm' | 'elevated' | 'crisis'
+        scenario: 'calm' | 'medium' | 'crisis'
     """
     scenarios = {
         "calm": {
             "disasters": [],
             "reports":   [],
         },
-        "elevated": {
+        "medium": {
             "disasters": [
                 DisasterEvent("Flood in Portugal", "FL", "Orange", "Portugal", 8, ""),
                 DisasterEvent("Wildfire in Spain",  "WF", "Green",  "Spain",   2, ""),
