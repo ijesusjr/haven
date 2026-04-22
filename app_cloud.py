@@ -241,6 +241,7 @@ def _fetch_weather(lat: float, lon: float) -> dict:
             for a in alerts
         ]
         risk = compute_risk_score(snap, alert_objs)
+        weather_info = current.get("weather", [{}])[0]
         return {
             "score": risk.risk_score,
             "level": risk.risk_level,
@@ -250,6 +251,19 @@ def _fetch_weather(lat: float, lon: float) -> dict:
                 "wind_bonus":       risk.wind_bonus,
                 "rain_bonus":       risk.rain_bonus,
             },
+            "condition": {
+                "main":        weather_info.get("main", ""),
+                "description": weather_info.get("description", ""),
+            },
+            "alerts": [
+                {
+                    "event":       a.get("event", ""),
+                    "severity":    _infer_severity(a),
+                    "description": a.get("description", ""),
+                    "sender":      a.get("sender_name", ""),
+                }
+                for a in alerts
+            ],
         }
     except Exception:
         return _stub_weather()
@@ -260,6 +274,8 @@ def _stub_weather() -> dict:
         "score": 0, "level": "LOW",
         "breakdown": {"weather_severity": 0, "alert_severity": 0,
                       "wind_bonus": 0, "rain_bonus": 0},
+        "condition": {"main": "", "description": ""},
+        "alerts": [],
     }
 
 
@@ -583,6 +599,37 @@ with col_risk:
             f'<b>{w["level"]}</b></div>',
             unsafe_allow_html=True,
         )
+
+        # Current condition
+        cond = w.get("condition", {})
+        if cond.get("description"):
+            st.markdown(
+                f'<div style="margin-top:10px;padding-top:8px;border-top:1px solid #333;">'
+                f'<div style="font-size:0.75em;color:#aaa;margin-bottom:4px">🌡 Current condition</div>'
+                f'<div style="font-size:0.85em">{cond["main"]} — {cond["description"].capitalize()}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+        # Active alerts
+        active_alerts = w.get("alerts", [])
+        if active_alerts:
+            severity_colors = {"Extreme": "#8e44ad", "Severe": "#e74c3c", "Moderate": "#f39c12", "Minor": "#f1c40f"}
+            alerts_html = '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #333;">'
+            alerts_html += '<div style="font-size:0.75em;color:#aaa;margin-bottom:6px">⚡ Active alerts</div>'
+            for al in active_alerts:
+                col = severity_colors.get(al["severity"], "#f39c12")
+                desc = al["description"][:180] + "…" if len(al.get("description", "")) > 180 else al.get("description", "")
+                sender = f'<span style="color:#666"> · {al["sender"]}</span>' if al.get("sender") else ""
+                alerts_html += (
+                    f'<div style="margin-bottom:8px;padding:6px 8px;background:#1e1e1e;border-left:3px solid {col};border-radius:3px">'
+                    f'<div style="font-size:0.82em;font-weight:bold;color:{col}">{al["event"]} '
+                    f'<span style="font-weight:normal;color:#aaa">({al["severity"]})</span>{sender}</div>'
+                    + (f'<div style="font-size:0.75em;color:#888;margin-top:3px">{desc}</div>' if desc else '')
+                    + '</div>'
+                )
+            alerts_html += '</div>'
+            st.markdown(alerts_html, unsafe_allow_html=True)
 
     with st.expander("ℹ About this risk", expanded=False):
         st.markdown("""<div style="font-size:0.8em">

@@ -6,19 +6,19 @@
 
 ---
 
-## Overview
+## 🔍 Overview
 
-In a world of increasing climate and regional volatility, HAVEN (Hazard-Aware Vigilance and Emergency Navigator) serves as a personalized safety bridge between government data and individual action. Unlike generic weather apps, HAVEN:
+In a world of increasing climate and regional volatility, **HAVEN** (Hazard-Aware Vigilance and Emergency Navigator) serves as a personalized safety bridge between government data and individual action. Unlike generic weather apps, HAVEN:
 
-- Contextualizes Risk: Cross-references live weather, disaster, and health data with your specific location.
+- **Contextualizes Risk**: Cross-references live weather, disaster, and health data with your specific location.
 
-- Quantifies Readiness: Moves beyond "you should have water" to "your current water supply lasts 16 hours for your household of three."
+- **Quantifies Readiness**: Moves beyond "you should have water" to "your current water supply lasts 16 hours for your household of three."
 
-- Provides Verifiable Answers: Uses a Retrieval-Augmented Generation (RAG) pipeline to ensure all advice is backed by EU emergency documentation.
+- **Provides Verifiable Answers**: Uses a Retrieval-Augmented Generation (RAG) pipeline to ensure all advice is backed by EU emergency documentation.
 
 ---
 
-## What it does
+## ⚙️ What it does
 
 Given a location and a home emergency kit inventory, HAVEN:
 
@@ -32,33 +32,35 @@ Given a location and a home emergency kit inventory, HAVEN:
 
 ---
 
-## App Demo
+## 🖥️ App Demo
 
 **https://haven-app.streamlit.app/**
 
 ---
 
-## Dataset
+## 🗄️ Dataset
 
 HAVEN utilizes a hybrid data strategy combining real-time API streams and a static knowledge base:
 
-1. Real-Time Risk Streams
-- Weather: OpenWeatherMap One Call 3.0 (National alerts from AEMET, SMHI, etc.).
-- Regional Disasters: GDACS (Global Disaster Alert and Coordination System) RSS feeds.
-- Humanitarian Crises: ReliefWeb (UN OCHA) API.
-- Public Health: ECDC (European Centre for Disease Prevention and Control) weekly Communicable Disease Threats Reports.
+1. Real-Time **Risk Streams**
 
-2. RAG Knowledge Base (Vector Store)
+- **Weather**: OpenWeatherMap One Call 3.0 (National alerts from AEMET, SMHI, etc.).
+- Regional **Disasters**: GDACS (Global Disaster Alert and Coordination System) RSS feeds.
+- **Humanitarian Crises**: ReliefWeb (UN OCHA) API.
+- Public **Health**: ECDC (European Centre for Disease Prevention and Control) weekly Communicable Disease Threats Reports.
+
+2. **RAG** Knowledge Base (Vector Store)
+
 The system is grounded in 4  EU government emergency preparedness guides:
-- Belgium: Crisis Centre (crisiscenter.be)
-- Netherlands: Denk Vooruit (denkvooruit.nl)
-- Sweden: Krisinformation (krisinformation.se)
-- Czech Republic: 72h.cz
+- *Belgium*: Crisis Centre (crisiscenter.be)
+- *Netherlands*: Denk Vooruit (denkvooruit.nl)
+- *Sweden*: Krisinformation (krisinformation.se)
+- *Czech Republic*: 72h.cz
 
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -105,7 +107,7 @@ The system is grounded in 4  EU government emergency preparedness guides:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Key design decisions
+### 🧠 Key design decisions
 
 **Risk architecture** — three signals on different scales, never summed. Each signal has its own
 scale (100 / 30 / 50), update cadence, and geographic scope. The UI displays them
@@ -121,21 +123,21 @@ it is swappable via a single env var.
 
 ---
 
-## Features
+## ✨ Features
 
-### Risk signals
+### 📡 Risk signals
 | Signal | Source | Scale | Cadence |
 |--------|--------|-------|---------|
 | Weather | OWM One Call 3.0 (national AEMET/SMHI alerts) | 0–100 | 60 min |
 | Regional | GDACS (UN/EC) + ReliefWeb (UN OCHA) | 0–30 | 7 days |
 | Health | ECDC CDTR weekly bulletin | 0–50 | 7 days |
 
-### Kit analyser
+### 🧰 Kit analyser
 - Compares current quantities against EU 72-hour per-person recommendations
 - Flags items expiring within 7 days (CRITICAL) or 30 days (WARNING)
 - Scales recommendations with household size (water, food, medication, cash)
 
-### Scenario simulator
+### 🧪 Scenario simulator
 Estimates how long the current kit covers a given emergency — not generic advice,
 but calculated from the user's actual item quantities:
 
@@ -161,15 +163,15 @@ Supported events: `power_outage` · `flood` · `earthquake` · `heat_wave` · `g
 
 ---
 
-## Quick start
+## 🚀 Quick start
 
-### Prerequisites
+### 📋 Prerequisites
 - Python 3.11+
 - Tesseract OCR (`sudo apt install tesseract-ocr` or `brew install tesseract`)
 - A free [Groq API key](https://console.groq.com) for the LLM backend
 - A free [OpenWeatherMap](https://openweathermap.org/api) key with One Call 3.0 activated
 
-### Install
+### 📦 Install
 
 ```bash
 git clone https://github.com/ijesusjr/haven.git
@@ -178,7 +180,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Configure
+### 🔧 Configure
 
 Create a `.env` file:
 
@@ -195,7 +197,7 @@ CITY_COUNTRY=Spain
 HOUSEHOLD_SIZE=1
 ```
 
-### Build the RAG index
+### 🔨 Build the RAG index
 
 Run the RAG notebook once to extract and embed the EU guides:
 
@@ -204,7 +206,7 @@ jupyter lab haven_rag.ipynb
 # Run all cells — builds data/faiss/index.bin and data/faiss/chunks.json
 ```
 
-### Run
+### ▶️ Run
 
 ```bash
 # Terminal 1 — API
@@ -218,7 +220,7 @@ Open [http://localhost:8501](http://localhost:8501).
 
 ---
 
-## Project structure
+## 📁 Project structure
 
 ```
 haven/
@@ -255,7 +257,7 @@ haven/
 
 ---
 
-## LLM backends
+## 🤖 LLM backends
 
 | `LLM_BACKEND` | When to use | Model | Cost |
 |---|---|---|---|
@@ -267,7 +269,7 @@ Switch with one env var — the prompt template is identical across all backends
 
 ---
 
-## API reference
+## 🔌 API reference
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -285,7 +287,7 @@ Switch with one env var — the prompt template is identical across all backends
 ---
 
 
-## Data sources
+## 🌐 Data sources
 
 | Source | What it provides | Auth |
 |--------|-----------------|------|
