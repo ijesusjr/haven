@@ -589,8 +589,10 @@ with col_risk:
         st.caption(f"Active alert · severity {w['breakdown']['alert_severity']}")
 
     with st.expander("📊 Weather score breakdown", expanded=False):
-        bd   = w["breakdown"]
-        cond = w.get("condition", {})
+        bd            = w["breakdown"]
+        cond          = w.get("condition", {})
+        active_alerts = w.get("alerts", [])
+        severity_colors = {"Extreme": "#8e44ad", "Severe": "#e74c3c", "Moderate": "#f39c12", "Minor": "#f1c40f"}
         rows = [
             ("⚡ Active alert",  bd["alert_severity"],   60, "National alert tags (Minor/Moderate/Severe/Extreme)"),
             ("🌡 Condition",     bd["weather_severity"], 40, "OWM weather ID — thunderstorm, snow, fog, rain…"),
@@ -610,6 +612,20 @@ with col_risk:
                 f'</div><div style="font-size:0.72em;color:#666">{note}</div></div>',
                 unsafe_allow_html=True,
             )
+            if label.startswith("⚡") and active_alerts:
+                alerts_html = ""
+                for al in active_alerts:
+                    col  = severity_colors.get(al["severity"], "#f39c12")
+                    desc = al["description"][:180] + "…" if len(al.get("description", "")) > 180 else al.get("description", "")
+                    sender = f'<span style="color:#666"> · {al["sender"]}</span>' if al.get("sender") else ""
+                    alerts_html += (
+                        f'<div style="margin-bottom:6px;padding:6px 8px;background:#1a1a1a;border-left:3px solid {col};border-radius:3px">'
+                        f'<div style="font-size:0.82em;font-weight:bold;color:white">{al["event"]} '
+                        f'<span style="font-weight:normal;color:{col}">({al["severity"]})</span>{sender}</div>'
+                        + (f'<div style="font-size:0.75em;color:#888;margin-top:3px">{desc}</div>' if desc else '')
+                        + '</div>'
+                    )
+                st.markdown(f'<div style="margin:2px 0 8px 0">{alerts_html}</div>', unsafe_allow_html=True)
             if label.startswith("🌡") and cond.get("description"):
                 st.markdown(
                     f'<div style="margin:2px 0 8px 0;padding:4px 8px;background:#1a1a1a;border-radius:3px;">'
@@ -624,26 +640,6 @@ with col_risk:
             f'<b>{w["level"]}</b></div>',
             unsafe_allow_html=True,
         )
-
-        # Active alerts
-        active_alerts = w.get("alerts", [])
-        if active_alerts:
-            severity_colors = {"Extreme": "#8e44ad", "Severe": "#e74c3c", "Moderate": "#f39c12", "Minor": "#f1c40f"}
-            alerts_html = '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #333;">'
-            alerts_html += '<div style="font-size:0.75em;color:#aaa;margin-bottom:6px">⚡ Active alerts</div>'
-            for al in active_alerts:
-                col = severity_colors.get(al["severity"], "#f39c12")
-                desc = al["description"][:180] + "…" if len(al.get("description", "")) > 180 else al.get("description", "")
-                sender = f'<span style="color:#666"> · {al["sender"]}</span>' if al.get("sender") else ""
-                alerts_html += (
-                    f'<div style="margin-bottom:8px;padding:6px 8px;background:#1e1e1e;border-left:3px solid {col};border-radius:3px">'
-                    f'<div style="font-size:0.82em;font-weight:bold;color:white">{al["event"]} '
-                    f'<span style="font-weight:normal;color:{col}">({al["severity"]})</span>{sender}</div>'
-                    + (f'<div style="font-size:0.75em;color:#888;margin-top:3px">{desc}</div>' if desc else '')
-                    + '</div>'
-                )
-            alerts_html += '</div>'
-            st.markdown(alerts_html, unsafe_allow_html=True)
 
     with st.expander("ℹ About this risk", expanded=False):
         st.markdown("""<div style="font-size:0.8em">
