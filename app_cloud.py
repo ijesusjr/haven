@@ -257,7 +257,7 @@ def _fetch_weather(lat: float, lon: float) -> dict:
             },
             "alerts": [
                 {
-                    "event":       a.get("event", ""),
+                    "event":       _clean_event(a.get("event", "")),
                     "severity":    _infer_severity(a),
                     "description": a.get("description", ""),
                     "sender":      a.get("sender_name", ""),
@@ -285,6 +285,21 @@ def _infer_severity(alert: dict) -> str:
     if "severe"   in tags: return "Severe"
     if "moderate" in tags: return "Moderate"
     return "Minor"
+
+
+_AWARENESS_TYPES = {
+    "1": "Wind", "2": "Snow/Ice", "3": "Thunderstorm", "4": "Fog",
+    "5": "High Temperature", "6": "Low Temperature", "7": "Rain",
+    "8": "Coastal Event", "9": "Forest Fire", "10": "Avalanche", "11": "Flood",
+}
+
+def _clean_event(event: str) -> str:
+    """Replace OWM awareness_type/level key=value strings with readable labels."""
+    import re
+    at = re.search(r"awareness_type=(\d+)", event)
+    if at:
+        return _AWARENESS_TYPES.get(at.group(1), "Weather Alert")
+    return event.strip() or "Weather Alert"
 
 
 @st.cache_data(ttl=604800, show_spinner=False)
@@ -574,13 +589,15 @@ with col_risk:
         st.caption(f"Active alert · severity {w['breakdown']['alert_severity']}")
 
     with st.expander("📊 Weather score breakdown", expanded=False):
-        bd = w["breakdown"]
-        for label, score, max_s, note in [
+        bd   = w["breakdown"]
+        cond = w.get("condition", {})
+        rows = [
             ("⚡ Active alert",  bd["alert_severity"],   60, "National alert tags (Minor/Moderate/Severe/Extreme)"),
             ("🌡 Condition",     bd["weather_severity"], 40, "OWM weather ID — thunderstorm, snow, fog, rain…"),
             ("💨 Wind bonus",    bd["wind_bonus"],       15, "Wind speed > 10 m/s"),
             ("🌧 Rain bonus",    bd["rain_bonus"],       10, "Rainfall > 2 mm/h"),
-        ]:
+        ]
+        for label, score, max_s, note in rows:
             color = "#e74c3c" if score >= max_s * 0.6 else "#f39c12" if score > 0 else "#555"
             pct   = int(score / max_s * 100) if max_s > 0 else 0
             st.markdown(
@@ -593,23 +610,20 @@ with col_risk:
                 f'</div><div style="font-size:0.72em;color:#666">{note}</div></div>',
                 unsafe_allow_html=True,
             )
+            if label.startswith("🌡") and cond.get("description"):
+                st.markdown(
+                    f'<div style="margin:2px 0 8px 0;padding:4px 8px;background:#1a1a1a;border-radius:3px;">'
+                    f'<span style="font-size:0.78em;color:#aaa">'
+                    f'{cond["main"]} — {cond["description"].capitalize()}</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
         st.markdown(
             f'<div style="margin-top:8px;padding-top:8px;border-top:1px solid #333;'
             f'font-size:0.85em">Total: <b style="color:white">{w["score"]}</b>/100 → '
             f'<b>{w["level"]}</b></div>',
             unsafe_allow_html=True,
         )
-
-        # Current condition
-        cond = w.get("condition", {})
-        if cond.get("description"):
-            st.markdown(
-                f'<div style="margin-top:10px;padding-top:8px;border-top:1px solid #333;">'
-                f'<div style="font-size:0.75em;color:#aaa;margin-bottom:4px">🌡 Current condition</div>'
-                f'<div style="font-size:0.85em">{cond["main"]} — {cond["description"].capitalize()}</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
 
         # Active alerts
         active_alerts = w.get("alerts", [])
@@ -623,8 +637,8 @@ with col_risk:
                 sender = f'<span style="color:#666"> · {al["sender"]}</span>' if al.get("sender") else ""
                 alerts_html += (
                     f'<div style="margin-bottom:8px;padding:6px 8px;background:#1e1e1e;border-left:3px solid {col};border-radius:3px">'
-                    f'<div style="font-size:0.82em;font-weight:bold;color:{col}">{al["event"]} '
-                    f'<span style="font-weight:normal;color:#aaa">({al["severity"]})</span>{sender}</div>'
+                    f'<div style="font-size:0.82em;font-weight:bold;color:white">{al["event"]} '
+                    f'<span style="font-weight:normal;color:{col}">({al["severity"]})</span>{sender}</div>'
                     + (f'<div style="font-size:0.75em;color:#888;margin-top:3px">{desc}</div>' if desc else '')
                     + '</div>'
                 )
